@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .grid{
+            transform: rotateY(180deg);
+            background-color: #bbbbbb;
+            grid-template-columns: repeat(16, 1fr);
+            grid-template-rows: repeat(16, 1fr);
+
+            width: fit-content;
+            margin: 40px auto;
+            border: 10px solid red;
+            padding: 5px;
+            box-shadow: 10px 10px 0 red;
+        }
+        .grid>div{
+            display: flex;
+        }
+        .invert{
+            flex-direction: row-reverse;
+        }
+        .cell{
+            width: 40px;
+            height: 40px;
+            margin: 2px;
+        }
+    </style>
+</head>
+<body>
+<input type="color" name="" id="">
+  <div class="grid"></div>
+<button onclick="reset()">Reset</button>
+  <script src="http://192.168.64.213:3000/socket.io/socket.io.js"></script>
+  <script>
+      const socket = io('192.168.64.213:3000')
+      socket.on("postStatus", data => {
+          console.log(data)
+      })
+
+      function calcIndex(i, size){
+          let index = i
+          if(Math.floor(i/size)%2 === 1){
+              index = (size*(Math.floor(i/size)+1)) - (i%size + 1)
+              console.log("ligne numéro "+(Math.floor(i/size)+1), "cellule numéro "+i%16)
+          }
+          return index
+      }
+
+      function hexToRGB(color){
+          console.log(color)
+          let aRgbHex = color.match(/.{1,2}/g);
+          console.log(aRgbHex)
+          return [
+              parseInt(aRgbHex[0], 16),
+              parseInt(aRgbHex[1], 16),
+              parseInt(aRgbHex[2], 16)
+          ];
+      }
+
+
+
+      function componentToHex(c) {
+          let hex = c.toString(16);
+          return hex.length === 1 ? "0" + hex : hex;
+      }
+
+      function rgbToHex(tab) {
+          return "#" + componentToHex(tab[0]) + componentToHex(tab[1]) + componentToHex(tab[2]);
+      }
+
+      let ledArray = []
+      async function getArray(){
+          await fetch('http://localhost:3000/api/grid').then(response => response.json()).then(data => {
+              ledArray = data;
+          })
+      }
+      getArray().then(() => {
+          const colorPicker = document.querySelector('input[type=color]')
+          console.log(ledArray)
+          let grid = document.querySelector('div.grid')
+          for(let i = 0; i<16; i++){
+              let div = document.createElement('div');
+              if(i%2!==0){
+                  div.classList.add('invert')
+              }
+              grid.appendChild(div)
+          }
+          ledArray.forEach((v, i) => {
+              let div = document.createElement('div')
+              div.classList.add('cell')
+              if(v.toString() !== [0,0,0].toString()){
+                  div.style.backgroundColor = rgbToHex(v)
+              }else{
+                  div.style.backgroundColor = "black"
+              }
+              div.addEventListener('click', (e) => {
+                  const newState = e.target.classList.contains('on')?[0,0,0]:hexToRGB(colorPicker.value.slice(1))
+                  socket.emit('updateLED', {
+                      index: calcIndex(i, 16),
+                      value: newState
+                  })
+                  e.target.style.backgroundColor = rgbToHex(newState)
+                  console.log('Modifying :', i, newState)
+              })
+              console.log(Math.floor(i/16) + 1)
+              document.querySelector('.grid>div:nth-child('+(Math.floor(i/16) + 1)+')').appendChild(div)
+          })
+
+      })
+
+      function reset(){
+          fetch('http://localhost:3000/api/grid', {
+              method: "DELETE"
+          })
+          document.querySelectorAll(".cell").forEach(cell => {
+              cell.style.backgroundColor = 'black'
+          })
+
+      }
+  </script>
+</body>
+</html>
