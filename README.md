@@ -10,6 +10,8 @@ Interact via web interface to led matrix with Raspberry Pi and MicroPython
 - Breadboard
 - Leds
 
+![diagram](./diagram.png)
+
 ## Software
 
 - MicroPython
