@@ -33,9 +33,9 @@
 <input type="color" name="" id="">
   <div class="grid"></div>
 <button onclick="reset()">Reset</button>
-  <script src="http://192.168.64.213:3000/socket.io/socket.io.js"></script>
+  <script src="http://localhost:3000/socket.io/socket.io.js"></script>
   <script>
-      const socket = io('192.168.64.213:3000')
+      const socket = io('localhost:3000')
       socket.on("postStatus", data => {
           console.log(data)
       })
